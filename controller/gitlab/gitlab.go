@@ -9,13 +9,17 @@ import (
 )
 
 type Config struct {
-	Name      string
-	Project   string
-	Graph     string
-	URL       string
-	AuthToken string
-	Username  string
-	Client    *git.Client
+	Name             string
+	Project          string
+	Graph            string
+	URL              string
+	AuthToken        string
+	Username         string
+	AssigneeUsername string
+	Sort             string
+	State            string
+	Scope            string
+	Client           *git.Client
 }
 
 var config Config
@@ -30,7 +34,7 @@ func Process(extConfig Config, path string) {
 }
 
 func getClient() *git.Client {
-	git, err := git.NewClient(
+	gitClient, err := git.NewClient(
 		config.AuthToken,
 		git.WithBaseURL(config.URL),
 	)
@@ -38,18 +42,33 @@ func getClient() *git.Client {
 		log.Println(err.Error())
 	}
 
-	return git
+	return gitClient
 }
 
 func getGitlabIssues() (filename string, fileContent string) {
 	log.Println("get Gitlab Issues: " + config.Name)
 	var issues []*git.Issue
+	sort := "desc"
+	scope := "all"
+
+	if len(config.Sort) > 0 {
+		sort = config.Sort
+	}
+	if len(config.Scope) > 0 {
+		scope = config.Scope
+	}
 
 	issueOpts := &git.ListIssuesOptions{
-		State:            git.String("opened"),
-		AssigneeUsername: git.String(config.Username),
-		Sort:             git.String("desc"),
-		Scope:            git.String("all"),
+		Sort:  git.String(sort),
+		Scope: git.String(scope),
+	}
+
+	if len(config.AssigneeUsername) > 0 {
+		issueOpts.AssigneeUsername = git.String(config.AssigneeUsername)
+	}
+
+	if len(config.State) > 0 {
+		issueOpts.State = git.String(config.State)
 	}
 
 	for {
@@ -69,17 +88,35 @@ func getGitlabIssues() (filename string, fileContent string) {
 
 	if len(issues) > 0 {
 		for _, val := range issues {
+			var project, labels, milestone, assignee, closed string
 			projectName, _ := getGitlabProjectName(val.ProjectID)
-			log.Println(val.State, " ", projectName, " #", val.IID, " ", val.Title, " ", val.Labels)
 
-			var project string
 			if len(config.Project) > 0 {
 				project = "#" + config.Project + " "
 			}
 
-			if val.State == "opened" {
-				fileContent = addTicket(projectName+" [#"+strconv.Itoa(val.IID)+"]", "- "+getState(val.State)+" "+getGitlabPriority(val)+project+projectName+" [#"+strconv.Itoa(val.IID)+"]("+val.WebURL+")"+" "+val.Title, fileContent)
+			if len(labels) > 0 {
+				for _, label := range val.Labels {
+					labels = labels + " [[" + label + "]]"
+				}
 			}
+
+			if val.Milestone != nil && len(val.Milestone.Title) > 0 {
+				milestone = " [[Milestone:: " + val.Milestone.Title + "]]"
+			}
+
+			if val.Assignee != nil && len(val.Assignee.Username) > 0 {
+				assignee = " [[Assignee:: " + val.Assignee.Username + "]]"
+			}
+
+			if val.ClosedAt != nil {
+				closed = "\n" + "completed:: " + val.ClosedAt.Format("[[01-02-2006]] *15:04*")
+			}
+
+			fileContent = addTicket(
+				projectName+" [#"+strconv.Itoa(val.IID)+"]",
+				"- "+getState(val.State)+" "+getGitlabPriority(val)+project+projectName+" [#"+strconv.Itoa(val.IID)+"]("+val.WebURL+")"+" "+val.Title+labels+milestone+assignee+closed,
+				fileContent)
 		}
 	}
 
