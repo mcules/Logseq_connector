@@ -54,6 +54,7 @@ func getGitlabIssues() (filename string, fileContent string) {
 	if len(config.Sort) > 0 {
 		sort = config.Sort
 	}
+
 	if len(config.Scope) > 0 {
 		scope = config.Scope
 	}
@@ -86,6 +87,8 @@ func getGitlabIssues() (filename string, fileContent string) {
 		issueOpts.Page = resp.NextPage
 	}
 
+	log.Println("Got all Issues for " + config.Name)
+
 	if len(issues) > 0 {
 		for _, val := range issues {
 			var project, labels, milestone, assignee, closed string
@@ -113,10 +116,7 @@ func getGitlabIssues() (filename string, fileContent string) {
 				closed = "\n" + "completed:: " + val.ClosedAt.Format("[[01-02-2006]] *15:04*")
 			}
 
-			fileContent = addTicket(
-				projectName+" [#"+strconv.Itoa(val.IID)+"]",
-				"- "+getState(val.State)+" "+getGitlabPriority(val)+project+projectName+" [#"+strconv.Itoa(val.IID)+"]("+val.WebURL+")"+" "+val.Title+labels+milestone+assignee+closed,
-				fileContent)
+			fileContent = addTicket(projectName+" [#"+strconv.Itoa(val.IID)+"]", "- "+getState(val.State)+" "+getGitlabPriority(val)+project+projectName+" [#"+strconv.Itoa(val.IID)+"]("+val.WebURL+")"+" "+val.Title+labels+milestone+assignee+closed, fileContent)
 		}
 	}
 

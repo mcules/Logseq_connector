@@ -210,7 +210,7 @@ func elementsGet(uri string) []byte {
 
 func documentsGet(uri string) (documents []Document) {
 	if len(uri) == 0 {
-		uri = config.Url + "api/documents/?ordering=-added&page_size=250&truncate_content=true"
+		uri = config.Url + "api/documents/?ordering=created&page_size=250&truncate_content=true"
 	}
 
 	var temp Documents
