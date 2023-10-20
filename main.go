@@ -28,17 +28,26 @@ func main() {
 
 	getConfig(path + "config.json")
 
+	// region Calendar
 	for _, instance := range config.Calendar {
+		log.Println("get Calendar:", instance.Name)
 		calendar.GetCalendar(instance, path+config.Graph[instance.Graph])
 	}
+	// endregion
 
+	// region gitlab
 	for _, instance := range config.Gitlab {
+		log.Println("get Gitlab:", instance.Name)
 		gitlab.Process(instance, path+config.Graph[instance.Graph]+"/pages/gitlab___")
 	}
+	// endregion
 
+	// region Paperless
 	for _, instance := range config.Paperless {
+		log.Println("get Paperless:", instance.Name)
 		paperless.Process(instance, path+config.Graph[instance.Graph]+"/pages/documents___paperless___")
 	}
+	// endregion
 }
 
 func getConfig(filename string) {

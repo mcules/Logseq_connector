@@ -178,7 +178,6 @@ func login(username string, password string, url string) {
 
 func elementsGet(uri string) []byte {
 	uri = httpToHttps(uri)
-	log.Println("Paperless: " + uri)
 	// Create a Bearer string by appending string access token
 	var bearer = "Token " + config.Token
 

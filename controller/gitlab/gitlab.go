@@ -46,7 +46,6 @@ func getClient() *git.Client {
 }
 
 func getGitlabIssues() (filename string, fileContent string) {
-	log.Println("get Gitlab Issues: " + config.Name)
 	var issues []*git.Issue
 	sort := "desc"
 	scope := "all"
@@ -86,8 +85,6 @@ func getGitlabIssues() (filename string, fileContent string) {
 
 		issueOpts.Page = resp.NextPage
 	}
-
-	log.Println("Got all Issues for " + config.Name)
 
 	if len(issues) > 0 {
 		for _, val := range issues {

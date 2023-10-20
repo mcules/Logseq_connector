@@ -26,7 +26,6 @@ var config Config
 func GetCalendar(extConf Config, path string) {
 	config = extConf
 
-	log.Println("get Calendar: " + config.Name)
 	icsName := config.Name + ".ics"
 
 	filename := path + "journals/"
