@@ -307,7 +307,7 @@ func getTagName(tags *[]Tag, id int) string {
 }
 
 func getDocLink(id int, name string) string {
-	return "[" + name + "](" + config.Url + "documents/" + strconv.Itoa(id) + "/)"
+	return "[Paperless](" + config.Url + "documents/" + strconv.Itoa(id) + "/) [[" + name + "]]"
 }
 
 func getDocType(docTypes *[]DocumentType, id int) string {

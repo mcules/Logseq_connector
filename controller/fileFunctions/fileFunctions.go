@@ -28,7 +28,7 @@ func WriteFile(newContent string, fileHandle *os.File) {
 	oldContent := GetFileContent(fileHandle)
 
 	if newContent != oldContent {
-		log.Println("File changed")
+		log.Println("File changed: ", fileHandle.Name())
 		if err := fileHandle.Truncate(0); err != nil {
 			log.Println(err.Error())
 		}
@@ -38,7 +38,5 @@ func WriteFile(newContent string, fileHandle *os.File) {
 		if _, err := fileHandle.Write([]byte(newContent)); err != nil {
 			log.Println(err.Error())
 		}
-	} else {
-		log.Println("File not changed")
 	}
 }
