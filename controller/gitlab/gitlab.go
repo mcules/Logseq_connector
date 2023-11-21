@@ -95,7 +95,7 @@ func getGitlabIssues() (filename string, fileContent string) {
 				project = "#" + config.Project + " "
 			}
 
-			if len(labels) > 0 {
+			if len(val.Labels) > 0 {
 				for _, label := range val.Labels {
 					labels = labels + " [[" + label + "]]"
 				}
