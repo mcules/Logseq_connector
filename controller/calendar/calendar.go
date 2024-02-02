@@ -54,7 +54,7 @@ func GetCalendar(extConf Config, path string) {
 
 		_, found := searchInString(fileContent, e.Summary)
 		if !found {
-			addToFile(fileHandle, config.Icon+" "+e.Start.Format("15:04")+" [["+config.Name+"]]: [["+e.Summary+"]]", strings.ReplaceAll(e.Description, "\\n", "\n"))
+			addToFile(fileHandle, "{{i "+config.Icon+"}} *"+e.Start.Format("15:04")+"* [["+config.Name+"]]: [["+e.Summary+"]]", strings.ReplaceAll(e.Description, "\\n", "\n"))
 		}
 
 		fileHandle.Close()
