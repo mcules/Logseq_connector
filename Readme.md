@@ -1,15 +1,29 @@
 # Summary
-This project is designed to seamlessly synchronize data from various systems into the Logseq graph, creating a cohesive and easy-to-navigate data network. At present, the supported systems include:
-- ICS Calendar: Enhances the functionality of Logseq by integrating calendar events from the ICS calendar system. This allows users to have a unified view of their event and task schedule in one place.
-- GitLab Issues: Syncs active GitLab issue tracking into the Logseq graph. An ideal feature for project management, it assists developers in maintaining an overview of issue statuses and progresses, all within Logseq.
-- Paperless-ngx Documents: Implements the document management system of Paperless-ngx into Logseq. By doing so, it eases access to important documents and notes.
 
-With these data integrations, the project takes a significant step towards making Logseq a more comprehensive tool for developers and individuals looking to streamline their digital workflows. The aim is to offer a multi-dimensional data interaction platform inside Logseq, using data from well-established systems in a structured and user-friendly manner.
+This project is designed to seamlessly synchronize data from various systems into the Logseq graph, creating a cohesive
+and easy-to-navigate data network. At present, the supported systems include:
+
+- ICS Calendar: Enhances the functionality of Logseq by integrating calendar events from the ICS calendar system. This
+  allows users to have a unified view of their event and task schedule in one place.
+- GitLab Issues: Syncs active GitLab issue tracking into the Logseq graph. An ideal feature for project management, it
+  assists developers in maintaining an overview of issue statuses and progresses, all within Logseq.
+- Paperless-ngx Documents: Implements the document management system of Paperless-ngx into Logseq. By doing so, it eases
+  access to important documents and notes.
+- SAP Cloud ALM: Retrieves tasks from SAP Cloud ALM where the user is either the responsible person or an involved party.
+  This integration helps users manage and track their assignments within SAP Cloud ALM efficiently in the structured
+  environment of Logseq.
+
+
+With these data integrations, the project takes a significant step towards making Logseq a more comprehensive tool for
+developers and individuals looking to streamline their digital workflows. The aim is to offer a multi-dimensional data
+interaction platform inside Logseq, using data from well-established systems in a structured and user-friendly manner.
 
 # Install
 
 ## Build
+
 First, you need to [install Golang](https://go.dev/doc/install) in order to be able to compile the project.
+
 ```
 git clone https://github.com/mcules/Logseq_connector.git
 cd Logseq_connector
@@ -17,23 +31,32 @@ go build .
 ```
 
 ## Logseq
+
 ### config.edn
-In order for the icons to be displayed correctly, the following must be entered in the macro section of your config.edn: `"i" "[:span {:class ti} \"&#x$1 \" ]"`
+
+In order for the icons to be displayed correctly, the following must be entered in the macro section of your config.edn:
+`"i" "[:span {:class ti} \"&#x$1 \" ]"`
 
 You can find icons with the associated codes here: [tabler-icons.io](https://tabler-icons.io/)
 
 ## Configuration
-Create a ***config.json*** file. An example of how it could look is provided below. You can use multiple instances for each system, but it's important that they each have distinct names.
+
+Create a ***config.json*** file. An example of how it could look is provided below. You can use multiple instances for
+each system, but it's important that they each have distinct names.
 
 ### graph
-You can use multiple graphs. In the respective settings you have to specify which graph you would like the data to be written with.
+
+You can use multiple graphs. In the respective settings you have to specify which graph you would like the data to be
+written with.
 
 | Variable   | Content        |
 |------------|----------------|
 | Graph_name | Link to folder |
 
 ### calendar
-Calendar Events are written to the daily journal file in format: `{{i $CALENDAR_ICON$}} *$EVENT_TIME$* [[$CALENDAR_NAME$]]: [[$EVENT_SUMMARY$]]`
+
+Calendar Events are written to the daily journal file in format:
+`{{i $CALENDAR_ICON$}} *$EVENT_TIME$* [[$CALENDAR_NAME$]]: [[$EVENT_SUMMARY$]]`
 
 | Variable | Content                          | required |
 |----------|----------------------------------|----------|
@@ -43,6 +66,7 @@ Calendar Events are written to the daily journal file in format: `{{i $CALENDAR_
 | icon     | Icon to show                     | yes      |
 
 ### gitlab
+
 The gitlab Issues are written to File: `gitlab___$GITLAB_PROJECT_NAME$___tickets.md`
 
 | Variable         | Content                                | default | required |
@@ -59,7 +83,9 @@ The gitlab Issues are written to File: `gitlab___$GITLAB_PROJECT_NAME$___tickets
 | assigneeUsername | Only issues which are assigned to user |         | optional |
 
 ### paperless
-The paperless documents are written in own files per correspondent: `documents___paperless___$PAPERLESS_CONFIG_NAME$___$DOCUMENT_CORRESPONDENT_NAME$.md`
+
+The paperless documents are written in own files per correspondent:
+`documents___paperless___$PAPERLESS_CONFIG_NAME$___$DOCUMENT_CORRESPONDENT_NAME$.md`
 
 The document line has the following structure: `icon document_type document_link document_name document_tags`
 
@@ -71,7 +97,25 @@ The document line has the following structure: `icon document_type document_link
 | password | your paperless sync password       | yes      |
 | url      | url to your paperless installation | yes      |
 
+### sapcloudalm
+
+The SAP Cloud ALM Tasks are written to File: `sap___cloudaml___$SAPCLOUDALM_CONFIG_NAME$.md`
+
+All tasks are loaded where the user is either assigned as the responsible person (via the assigneeId field) or is
+otherwise involved (via the involvedParties field).
+
+| Variable     | Content                                       | required |
+|--------------|-----------------------------------------------|----------|
+| name         | Name for your namespace in Logseq             | yes      |
+| graph        | Which graph should used                       | yes      |
+| clientId     | clientId which is authorized in SAP Cloud ALM | yes      |
+| clientSecret | clientSecret regarding your clientID          | yes      |
+| userId       | Your'e UserID in Cloud ALM (email)            | yes      |
+| url          | url to your paperless installation            | yes      |
+| tokenUrl     | Auth URL for SAP Cloud ALM                    | yes      |
+
 ### Example
+
 ```
 {
   "graph": {
@@ -128,8 +172,13 @@ The document line has the following structure: `icon document_type document_link
 ```
 
 ## Graph
-Depending on where you want to run your connector, you will need to ensure that your data is synchronized between your devices. Currently, I am using [Syncthing](https://syncthing.net/) for this purpose. However, you can also use [Nextcloud](https://nextcloud.com/) or any other data synchronization tool of your choice.
+
+Depending on where you want to run your connector, you will need to ensure that your data is synchronized between your
+devices. Currently, I am using [Syncthing](https://syncthing.net/) for this purpose. However, you can also
+use [Nextcloud](https://nextcloud.com/) or any other data synchronization tool of your choice.
 
 ## Cronjob
-I have the connector set up to run every 15 minutes through a cron job on my system. You can adjust the time as per your requirements.
+
+I have the connector set up to run every 15 minutes through a cron job on my system. You can adjust the time as per your
+requirements.
 `*/15 * * * * /opt/Logseq_connector/Logseq_connector /opt/Logseq_connector/`

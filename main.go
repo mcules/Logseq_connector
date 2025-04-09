@@ -54,7 +54,7 @@ func main() {
 	// region SapCloudAlm
 	for _, instance := range config.SapCloudAlm {
 		log.Println("get SAP Cloud ALM:", instance.Name)
-		sapcloudalm.Process(instance, path+config.Graph[instance.Graph]+"/pages/sapcloudalm___")
+		sapcloudalm.Process(instance, path+config.Graph[instance.Graph]+"/pages/sap___cloudalm___")
 	}
 	// endregion
 }

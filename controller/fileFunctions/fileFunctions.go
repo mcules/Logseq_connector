@@ -15,13 +15,12 @@ func GetFileContent(fileHandle *os.File) string {
 	return string(b)
 }
 
-func GetFilehandle(filename string) *os.File {
+func GetFilehandle(filename string) (*os.File, error) {
 	fileHandle, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
-
-	return fileHandle
+	return fileHandle, nil
 }
 
 func WriteFile(newContent string, fileHandle *os.File) {

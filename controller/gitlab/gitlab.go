@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"Logseq_connector/controller/fileFunctions"
+	"Logseq_connector/controller/logseq"
 	git "github.com/xanzy/go-gitlab"
 	"log"
 	"strconv"
@@ -30,7 +31,11 @@ func Process(extConfig Config, path string) {
 	config.Client = getClient()
 
 	filename, fileContent := getGitlabIssues()
-	fileFunctions.WriteFile(fileContent, fileFunctions.GetFilehandle(path+filename+"tickets.md"))
+	fileHandle, handleErr := fileFunctions.GetFilehandle(path + filename + "tickets.md")
+	if handleErr != nil {
+		log.Println(handleErr)
+	}
+	fileFunctions.WriteFile(fileContent, fileHandle)
 }
 
 func getClient() *git.Client {
@@ -113,30 +118,11 @@ func getGitlabIssues() (filename string, fileContent string) {
 				closed = "\n" + "completed:: " + val.ClosedAt.Format("[[01-02-2006]] *15:04*")
 			}
 
-			fileContent = addTicket(projectName+" [#"+strconv.Itoa(val.IID)+"]", "- "+getState(val.State)+" "+getGitlabPriority(val)+project+projectName+" [#"+strconv.Itoa(val.IID)+"]("+val.WebURL+")"+" "+val.Title+labels+milestone+assignee+closed, fileContent)
+			fileContent = logseq.AddOrReplaceEntry(projectName+" [#"+strconv.Itoa(val.IID)+"]", "- "+getState(val.State)+" "+getGitlabPriority(val)+project+projectName+" [#"+strconv.Itoa(val.IID)+"]("+val.WebURL+")"+" "+val.Title+labels+milestone+assignee+closed, fileContent)
 		}
 	}
 
 	return getProjectPath(config.Project), fileContent
-}
-
-func addTicket(searchStr string, insertStr string, fileContent string) string {
-	var added bool
-	lines := strings.Split(fileContent, "\n")
-
-	for i, line := range lines {
-		if strings.Contains(line, searchStr) {
-			lines[i] = insertStr
-			added = true
-		}
-	}
-
-	if !added {
-		newLine := []string{insertStr}
-		lines = append(newLine, lines...)
-	}
-
-	return strings.Join(lines, "\n")
 }
 
 func getGitlabProjectName(projectId int) (string, error) {

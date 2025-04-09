@@ -1,15 +1,17 @@
 package sapcloudalm
 
 import (
+	"Logseq_connector/controller/fileFunctions"
+	"Logseq_connector/controller/logseq"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
-	"time"
 )
 
 // Config represents the primary configuration structure for interacting with external APIs and services.
@@ -151,65 +153,18 @@ func getTasksForProject(projectID string) ([]map[string]interface{}, error) {
 	return tasks, nil
 }
 
-// Process retrieves tasks from multiple projects, applies user-specific filters, and returns a list of relevant tasks.
-func Process(extConf Config, path string) []map[string]interface{} {
-	config = extConf
-
-	var err error
-	config.Token, err = getAccessToken(config.ClientId, config.ClientSecret, config.TokenUrl)
-	if err != nil {
-		panic(err)
-	}
-
-	projects, err := getProjects()
-	if err != nil {
-		panic(err)
-	}
-
-	var allUserTasks []map[string]interface{}
-	var taskList []string
-
-	for _, project := range projects {
-		projectID, ok := project["id"].(string)
-		if !ok {
-			fmt.Printf("Invalid project ID format: %v\n", project["id"])
-			continue
-		}
-		projectName, _ := project["name"].(string)
-		fmt.Printf("Processing project %s (%s)\n", projectID, projectName)
-
-		tasks, err := getTasksForProject(projectID)
-		if err != nil {
-			fmt.Printf("Failed to get tasks for project %s: %v\n", projectID, err)
-			continue
-		}
-
-		for _, task := range tasks {
-			if isUserInvolved(task) {
-				task["projectName"] = projectName
-				allUserTasks = append(allUserTasks, task)
-				taskList = append(taskList, createTaskEntry(task))
-			}
-		}
-	}
-
-	fmt.Printf("Collected %d unique tasks for user %s\n", len(allUserTasks), config.UserId)
-
-	spew.Dump(taskList)
-	fmt.Println(path + config.Name)
-
-	return allUserTasks
-}
-
-// createTaskEntry generates a formatted string representation of a task using its properties for display or logging.
-func createTaskEntry(task map[string]interface{}) string {
+// createTaskEntry generates a formatted task entry string and a unique identifier based on the given task data.
+// It processes task information including status, priority, tags, due date, and project metadata.
+func createTaskEntry(task map[string]interface{}) (string, string) {
 	var result string
 
-	result += "\n - " + getTaskType(task["status"].(string))
+	result += "- " + getTaskType(task["status"].(string))
 	result += " " + getTaskPriority(task["priorityId"].(float64))
-	result += " " + "[[" + config.Name + "]]"
-	result += " [[" + task["displayId"].(string) + "]] @ [[" + task["projectName"].(string) + "]]"
+	uniqueStr := " [[" + task["displayId"].(string) + "]]"
+	result += uniqueStr
 	result += " " + task["title"].(string)
+
+	result += "\n  Project:: [[" + task["projectName"].(string) + "@" + config.Name + "]]"
 
 	// get Tags
 	if tags, ok := task["tags"].([]interface{}); ok {
@@ -220,21 +175,21 @@ func createTaskEntry(task map[string]interface{}) string {
 			}
 		}
 		if len(tagList) > 0 {
-			result += "\n tags:: " + strings.Join(tagList, ", ")
+			result += "\n  tags:: " + strings.Join(tagList, ", ")
 		}
 	} else if tagString, ok := task["tags"].(string); ok {
-		result += "\n tags:: " + tagString
+		result += "\n  tags:: " + tagString
 	}
 
 	// get DueDate
 	if task["dueDate"] != nil && task["dueDate"].(string) != "" {
-		dueDate := dateFormatScheduled(task["dueDate"].(string))
+		dueDate := logseq.GetScheduledDateFormat(task["dueDate"].(string))
 		if dueDate != "" {
-			result += "\n " + dueDate
+			result += "\n  " + dueDate
 		}
 	}
 
-	return result
+	return result, uniqueStr
 }
 
 // isUserInvolved checks whether the user (from config.UserId) is involved in a task by assigneeId or involvedParties.
@@ -257,18 +212,6 @@ func isUserInvolved(task map[string]interface{}) bool {
 	}
 
 	return false
-}
-
-// dateFormatScheduled formats a given date string into the format "SCHEDULED: <YYYY-MM-DD DDD>".
-// Returns an empty string if the input date cannot be parsed.
-func dateFormatScheduled(date string) string {
-	parsedDate, err := time.Parse("2006-01-02", date)
-	if err != nil {
-		fmt.Println("Error parsing date:", err)
-		return ""
-	}
-
-	return fmt.Sprintf("SCHEDULED: <%s %s>", parsedDate.Format("2006-01-02"), parsedDate.Weekday().String()[:3])
 }
 
 // getTaskType maps a task status string to a task type string such as TODO, DOING, WAIT, DONE, CLOSED, or UNKNOWN.
@@ -312,4 +255,64 @@ func getTaskPriority(priorityId float64) string {
 	}
 
 	return priorityToType[priorityId]
+}
+
+// Process retrieves tasks from multiple projects, applies user-specific filters, and returns a list of relevant tasks.
+func Process(extConf Config, path string) []map[string]interface{} {
+	config = extConf
+
+	var err error
+	config.Token, err = getAccessToken(config.ClientId, config.ClientSecret, config.TokenUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	projects, err := getProjects()
+	if err != nil {
+		panic(err)
+	}
+
+	var allUserTasks []map[string]interface{}
+	var fileContent string
+
+	for _, project := range projects {
+		projectID, ok := project["id"].(string)
+		if !ok {
+			fmt.Printf("Invalid project ID format: %v\n", project["id"])
+			continue
+		}
+		projectName, _ := project["name"].(string)
+
+		tasks, err := getTasksForProject(projectID)
+		if err != nil {
+			fmt.Printf("Failed to get tasks for project %s: %v\n", projectID, err)
+			continue
+		}
+
+		for _, task := range tasks {
+			if isUserInvolved(task) {
+				task["projectName"] = projectName
+				allUserTasks = append(allUserTasks, task)
+				taskLine, uniqueStr := createTaskEntry(task)
+				fileContent = logseq.AddOrReplaceEntry(uniqueStr, taskLine, fileContent)
+			}
+		}
+	}
+
+	filename := path + config.Name + ".md"
+
+	fileHandle, handleErr := fileFunctions.GetFilehandle(filename)
+	if handleErr != nil {
+		log.Println(err)
+	}
+	defer func(fileHandle *os.File) {
+		err := fileHandle.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(fileHandle)
+
+	fileFunctions.WriteFile(fileContent, fileHandle)
+
+	return allUserTasks
 }

@@ -36,7 +36,12 @@ func GetCalendar(extConf Config, path string) {
 	}
 
 	f, _ := os.Open(icsName)
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(f)
 
 	start, end := time.Now().Add(-(24 * time.Hour)), time.Now().Add(24*time.Hour)
 
@@ -48,7 +53,10 @@ func GetCalendar(extConf Config, path string) {
 	}
 
 	for _, e := range c.Events {
-		fileHandle := fileFunctions.GetFilehandle(filename + e.Start.Format("2006_01_02.md"))
+		fileHandle, handleErr := fileFunctions.GetFilehandle(filename + e.Start.Format("2006_01_02.md"))
+		if handleErr != nil {
+			log.Println(handleErr)
+		}
 
 		fileContent := fileFunctions.GetFileContent(fileHandle)
 
@@ -57,9 +65,15 @@ func GetCalendar(extConf Config, path string) {
 			addToFile(fileHandle, "{{i "+config.Icon+"}} *"+e.Start.Format("15:04")+"* [["+config.Name+"]]: [["+e.Summary+"]]", strings.ReplaceAll(e.Description, "\\n", "\n"))
 		}
 
-		fileHandle.Close()
+		err := fileHandle.Close()
+		if err != nil {
+			log.Println(err)
+		}
 	}
-	os.Remove(icsName)
+	err = os.Remove(icsName)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func downloadFile(filepath string, url string) error {
@@ -68,14 +82,24 @@ func downloadFile(filepath string, url string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(resp.Body)
 
 	// Create the file
 	out, err := os.Create(filepath)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func(out *os.File) {
+		err := out.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(out)
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
@@ -130,10 +154,16 @@ func getLastLineWithSeek(fileHandle *os.File) string {
 	if stat.Size() > 0 {
 		for {
 			cursor -= 1
-			fileHandle.Seek(cursor, io.SeekEnd)
+			_, err := fileHandle.Seek(cursor, io.SeekEnd)
+			if err != nil {
+				log.Println(err)
+			}
 
 			char := make([]byte, 1)
-			fileHandle.Read(char)
+			_, err = fileHandle.Read(char)
+			if err != nil {
+				log.Println(err)
+			}
 
 			if cursor != -1 && (char[0] == 10 || char[0] == 13) { // stop if we find a line
 				break
