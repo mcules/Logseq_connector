@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/apognu/gocal v0.9.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/shomali11/util v0.0.0-20220717175126-f0771b70947f
 	github.com/xanzy/go-gitlab v0.93.1

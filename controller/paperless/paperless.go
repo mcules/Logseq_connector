@@ -139,7 +139,11 @@ func Process(extConf Config, path string) {
 	}
 
 	for filename, fileContent := range getFiles(result) {
-		fileFunctions.WriteFile(fileContent, fileFunctions.GetFilehandle(path+config.Name+"___"+filename+".md"))
+		fileHandle, handleErr := fileFunctions.GetFilehandle(path + config.Name + "___" + filename + ".md")
+		if handleErr != nil {
+			log.Println(handleErr)
+		}
+		fileFunctions.WriteFile(fileContent, fileHandle)
 	}
 }
 
