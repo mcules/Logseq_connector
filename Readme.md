@@ -112,6 +112,17 @@ The document line has the following structure: `icon document_type document_link
       "password": "MySecurePassword",
       "url": "https://paperless.private.xyz/"
     }
+  ],
+  "sapcloudalm": [
+    {
+      "name": "sapcloudalm.work.xyz",
+      "graph": "Work",
+      "clientId": "MyUsername",
+      "clientSecret": "MyPassword",
+      "userId": "MyUserId",
+      "url": "",
+      "tokenUrl": ""
+    }
   ]
 }
 ```

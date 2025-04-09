@@ -4,6 +4,7 @@ import (
 	"Logseq_connector/controller/calendar"
 	"Logseq_connector/controller/gitlab"
 	"Logseq_connector/controller/paperless"
+	"Logseq_connector/controller/sapcloudalm"
 	"encoding/json"
 	"github.com/shomali11/util/xconditions"
 	"log"
@@ -11,10 +12,11 @@ import (
 )
 
 type Config struct {
-	Graph     map[string]string
-	Calendar  []calendar.Config
-	Gitlab    []gitlab.Config
-	Paperless []paperless.Config
+	Graph       map[string]string
+	Calendar    []calendar.Config
+	Gitlab      []gitlab.Config
+	Paperless   []paperless.Config
+	SapCloudAlm []sapcloudalm.Config
 }
 
 var config *Config
@@ -48,6 +50,13 @@ func main() {
 		paperless.Process(instance, path+config.Graph[instance.Graph]+"/pages/documents___paperless___")
 	}
 	// endregion
+
+	// region SapCloudAlm
+	for _, instance := range config.SapCloudAlm {
+		log.Println("get SAP Cloud ALM:", instance.Name)
+		sapcloudalm.Process(instance, path+config.Graph[instance.Graph]+"/pages/sapcloudalm___")
+	}
+	// endregion
 }
 
 func getConfig(filename string) {
@@ -56,5 +65,8 @@ func getConfig(filename string) {
 		log.Println(err)
 	}
 
-	json.Unmarshal(f, &config) //nolint:errcheck
+	err = json.Unmarshal(f, &config)
+	if err != nil {
+		panic(err)
+	} //nolint:errcheck
 }
