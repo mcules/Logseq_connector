@@ -3,6 +3,7 @@ package main
 import (
 	"Logseq_connector/controller/calendar"
 	"Logseq_connector/controller/gitlab"
+	"Logseq_connector/controller/jira"
 	"Logseq_connector/controller/paperless"
 	"Logseq_connector/controller/sapcloudalm"
 	"encoding/json"
@@ -17,6 +18,7 @@ type Config struct {
 	Gitlab      []gitlab.Config
 	Paperless   []paperless.Config
 	SapCloudAlm []sapcloudalm.Config
+	Jira        []jira.Config
 }
 
 var config *Config
@@ -55,6 +57,13 @@ func main() {
 	for _, instance := range config.SapCloudAlm {
 		log.Println("get SAP Cloud ALM:", instance.Name)
 		sapcloudalm.Process(instance, path+config.Graph[instance.Graph]+"/pages/sap___cloudalm___")
+	}
+	// endregion
+
+	// region Jira
+	for _, instance := range config.Jira {
+		log.Println("get Jira:", instance.Name)
+		jira.Process(instance, path+config.Graph[instance.Graph]+"/pages/jira___")
 	}
 	// endregion
 }
