@@ -3,16 +3,18 @@
 This project is designed to seamlessly synchronize data from various systems into the Logseq graph, creating a cohesive
 and easy-to-navigate data network. At present, the supported systems include:
 
-- ICS Calendar: Enhances the functionality of Logseq by integrating calendar events from the ICS calendar system. This
+- **ICS Calendar**: Enhances the functionality of Logseq by integrating calendar events from the ICS calendar system. This
   allows users to have a unified view of their event and task schedule in one place.
-- GitLab Issues: Syncs active GitLab issue tracking into the Logseq graph. An ideal feature for project management, it
+- **GitLab Issues**: Syncs active GitLab issue tracking into the Logseq graph. An ideal feature for project management, it
   assists developers in maintaining an overview of issue statuses and progresses, all within Logseq.
-- Paperless-ngx Documents: Implements the document management system of Paperless-ngx into Logseq. By doing so, it eases
+- **Paperless-ngx Documents**: Implements the document management system of Paperless-ngx into Logseq. By doing so, it eases
   access to important documents and notes.
-- SAP Cloud ALM: Retrieves tasks from SAP Cloud ALM where the user is either the responsible person or an involved party.
-  This integration helps users manage and track their assignments within SAP Cloud ALM efficiently in the structured
+- **SAP Cloud ALM**: Retrieves tasks from SAP Cloud ALM where the user is either the responsible person or an involved
+  party. This integration helps users manage and track their assignments within SAP Cloud ALM efficiently in the structured
   environment of Logseq.
-
+- **Jira Tasks**: Synchronizes Jira tasks and issues into the Logseq graph. These tasks are written to specific files,
+  ensuring a structured representation of projects and assignments. Each task is associated with relevant details such as
+  status, responsible parties, and progress, enabling efficient project monitoring directly within Logseq.
 
 With these data integrations, the project takes a significant step towards making Logseq a more comprehensive tool for
 developers and individuals looking to streamline their digital workflows. The aim is to offer a multi-dimensional data
@@ -110,9 +112,21 @@ otherwise involved (via the involvedParties field).
 | graph        | Which graph should used                       | yes      |
 | clientId     | clientId which is authorized in SAP Cloud ALM | yes      |
 | clientSecret | clientSecret regarding your clientID          | yes      |
-| userId       | Your'e UserID in Cloud ALM (email)            | yes      |
-| url          | url to your paperless installation            | yes      |
+| userId       | You're UserID in Cloud ALM (email)            | yes      |
+| url          | url to your sap cloud alm instance            | yes      |
 | tokenUrl     | Auth URL for SAP Cloud ALM                    | yes      |
+
+### jira
+
+You're Jira tasks are written to File: `jira___$JIRA_CONFIG_NAME$.md`
+
+| Variable | Content                           | required |
+|----------|-----------------------------------|----------|
+| name     | Name for your namespace in Logseq | yes      |
+| graph    | Which graph should used           | yes      |
+| username | Your Jira username                | yes      |
+| token    | Your Jira Access Token            | yes      |
+| url      | url to your Jira instance         | yes      |
 
 ### Example
 
@@ -164,10 +178,18 @@ otherwise involved (via the involvedParties field).
       "clientId": "MyUsername",
       "clientSecret": "MyPassword",
       "userId": "MyUserId",
-      "url": "",
-      "tokenUrl": ""
+      "url": "https://{tendant}.{region}.alm.cloud.sap/",
+      "tokenUrl": "https://{tendant}.authentication.{region}.hana.ondemand.com/oauth/token"
     }
-  ]
+  ],
+  "jira": [
+    {
+      "name": "jira.work.xyz",
+      "graph": "Work",
+      "username": "MyEmailOrUsername",
+      "token": "MySecureAuthToken",
+      "url": "https://{instance}.atlassian.net/"
+    }
 }
 ```
 

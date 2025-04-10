@@ -156,40 +156,33 @@ func getTasksForProject(projectID string) ([]map[string]interface{}, error) {
 // createTaskEntry generates a formatted task entry string and a unique identifier based on the given task data.
 // It processes task information including status, priority, tags, due date, and project metadata.
 func createTaskEntry(task map[string]interface{}) (string, string) {
-	var result string
+	var lTask logseq.Task
 
-	result += "- " + getTaskType(task["status"].(string))
-	result += " " + getTaskPriority(task["priorityId"].(float64))
-	uniqueStr := " [[" + task["displayId"].(string) + "]]"
-	result += uniqueStr
-	result += " " + task["title"].(string)
+	lTask.ConfigName = config.Name
+	lTask.Status = getTaskType(task["status"].(string))
+	lTask.Priority = getTaskPriority(task["priorityId"].(float64))
+	lTask.Id = task["displayId"].(string)
+	lTask.Title = task["title"].(string)
+	lTask.Url = config.Url + "launchpad#task-management?route=taskDetail&/taskDetail/" + task["displayId"].(string)
+	lTask.Project = task["projectName"].(string)
 
-	result += "\n  Project:: [[" + task["projectName"].(string) + "@" + config.Name + "]]"
+	if task["dueDate"] != nil && task["dueDate"].(string) != "" {
+		lTask.DueDate = task["dueDate"].(string)
+	}
 
-	// get Tags
+	var tagList []string
 	if tags, ok := task["tags"].([]interface{}); ok {
-		var tagList []string
 		for _, tag := range tags {
 			if tagStr, valid := tag.(string); valid {
-				tagList = append(tagList, "[["+tagStr+"]]")
+				tagList = append(tagList, tagStr)
 			}
 		}
-		if len(tagList) > 0 {
-			result += "\n  tags:: " + strings.Join(tagList, ", ")
-		}
 	} else if tagString, ok := task["tags"].(string); ok {
-		result += "\n  tags:: " + tagString
+		tagList = append(tagList, tagString)
 	}
+	lTask.Tags = tagList
 
-	// get DueDate
-	if task["dueDate"] != nil && task["dueDate"].(string) != "" {
-		dueDate := logseq.GetScheduledDateFormat(task["dueDate"].(string))
-		if dueDate != "" {
-			result += "\n  " + dueDate
-		}
-	}
-
-	return result, uniqueStr
+	return logseq.CreateTask(lTask)
 }
 
 // isUserInvolved checks whether the user (from config.UserId) is involved in a task by assigneeId or involvedParties.
@@ -244,21 +237,24 @@ func getTaskType(status string) string {
 	return "UNKNOWN"
 }
 
-// getTaskPriority returns the priority type as a string for a given priority ID.
-// The mapping is predefined in the function using a map of float64 to string.
-func getTaskPriority(priorityId float64) string {
-	priorityToType := map[float64]string{
-		10: "[#A]",
-		20: "[#B]",
-		30: "[#C]",
-		40: "[#D]",
+// getTaskPriority returns a string representation of a task priority based on the provided numeric priority ID.
+func getTaskPriority(priorityId float64) int {
+	switch priorityId {
+	case 10:
+		return 1
+	case 20:
+		return 2
+	case 30:
+		return 3
+	case 40:
+		return 4
 	}
 
-	return priorityToType[priorityId]
+	return 0
 }
 
 // Process retrieves tasks from multiple projects, applies user-specific filters, and returns a list of relevant tasks.
-func Process(extConf Config, path string) []map[string]interface{} {
+func Process(extConf Config, path string) {
 	config = extConf
 
 	var err error
@@ -313,6 +309,4 @@ func Process(extConf Config, path string) []map[string]interface{} {
 	}(fileHandle)
 
 	fileFunctions.WriteFile(fileContent, fileHandle)
-
-	return allUserTasks
 }
