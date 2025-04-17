@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -62,7 +63,7 @@ func GetCalendar(extConf Config, path string) {
 
 		_, found := searchInString(fileContent, e.Summary)
 		if !found {
-			addToFile(fileHandle, "{{i "+config.Icon+"}} *"+e.Start.Format("15:04")+"* [["+config.Name+"]]: [["+e.Summary+"]]", strings.ReplaceAll(e.Description, "\\n", "\n"))
+			addToFile(fileHandle, "{{i "+config.Icon+"}} *"+e.Start.Format("15:04")+"* [["+config.Name+"]]: [["+e.Summary+"]]", strings.ReplaceAll(trimTeamsHelp(e.Description), "\\n", "\n"))
 		}
 
 		err := fileHandle.Close()
@@ -108,8 +109,10 @@ func downloadFile(filepath string, url string) error {
 
 func addToFile(fileHandle *os.File, summary string, description string) {
 	var desc string
+
 	if len(description) > 0 {
-		desc = "\n  - " + description
+		desc = "\n  collapsed:: true"
+		desc += "\n  - " + description
 	}
 
 	if _, err := fileHandle.WriteString(emptyLine(fileHandle) + summary + desc); err != nil {
@@ -178,4 +181,13 @@ func getLastLineWithSeek(fileHandle *os.File) string {
 	}
 
 	return line
+}
+
+func trimTeamsHelp(input string) string {
+	condRegex := regexp.MustCompile(`(?ms)^[ \t]*_{2,}.*\n[ \t]*Microsoft Teams[\s\S]*?^[ \t]*_{2,}.*\n`)
+	unescaped := strings.ReplaceAll(input, `\n`, "\n")
+	cleaned := condRegex.ReplaceAllString(unescaped, "")
+	escaped := strings.ReplaceAll(cleaned, "\n", `\n`)
+
+	return strings.ReplaceAll(escaped, "\\n\\n________________________________________________________________________________", "")
 }
